@@ -105,6 +105,7 @@ npm run build
 
 - run `npm install`
 - the bot token is already placed in `server/.env`
+- admin Telegram IDs can be configured in `VITE_ADMIN_IDS` inside the root `.env` file
 - run `npm run start:server` to start the backend API and Telegram bot locally
 - deploy the frontend to Vercel as a static site for browser/TWA usage
 - `public/manifest.webmanifest` and mobile meta tags are added so the app behaves like a standalone web app on supported devices

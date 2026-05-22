@@ -2,11 +2,15 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 import type { AppView, Driver, Notification } from '@/types';
 import { mockAdmin, mockDrivers, mockNotifications, currentDriver } from '@/data/mockData';
 import type { Admin } from '@/types';
+import { getTelegramWebAppUser, isTelegramWebApp } from '@/utils/telegram';
 
 interface AppContextType {
   currentView: AppView;
   setView: (view: AppView) => void;
   isAdminAuthenticated: boolean;
+  isTelegramApp: boolean;
+  telegramUserId: number | null;
+  isTelegramAdmin: boolean;
   admin: Admin | null;
   loginAdmin: (password: string) => boolean;
   logoutAdmin: () => void;
@@ -32,6 +36,9 @@ const AppContext = createContext<AppContextType | null>(null);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [currentView, setCurrentView] = useState<AppView>('landing');
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [isTelegramApp, setIsTelegramApp] = useState(false);
+  const [telegramUserId, setTelegramUserId] = useState<number | null>(null);
+  const [isTelegramAdmin, setIsTelegramAdmin] = useState(false);
   const [admin, setAdmin] = useState<Admin | null>(null);
   const [drivers, setDrivers] = useState<Driver[]>(mockDrivers);
   const [selectedDriverId, setSelectedDriverId] = useState<string | null>(null);
@@ -61,6 +68,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     }
     loadBackendData();
+  }, []);
+
+  useEffect(() => {
+    const telegramAdminIds = import.meta.env.VITE_ADMIN_IDS?.split(',').map(id => Number(id.trim())).filter(Boolean) ?? [];
+    const telegramUser = getTelegramWebAppUser();
+    const telegram = isTelegramWebApp();
+    setIsTelegramApp(telegram);
+
+    if (telegram && telegramUser?.id) {
+      const userId = Number(telegramUser.id);
+      setTelegramUserId(userId);
+      const adminMatch = telegramAdminIds.includes(userId);
+      setIsTelegramAdmin(adminMatch);
+
+      if (adminMatch) {
+        setIsAdminAuthenticated(true);
+        setAdmin(mockAdmin);
+        setDriverMode(false);
+        setCurrentView('admin_dashboard');
+      } else {
+        setDriverMode(true);
+        setCurrentView('driver_dashboard');
+      }
+    }
   }, []);
 
   const loginAdmin = useCallback((password: string) => {
@@ -109,7 +140,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <AppContext.Provider value={{
       currentView, setView,
-      isAdminAuthenticated, admin, loginAdmin, logoutAdmin,
+      isAdminAuthenticated, isTelegramApp, telegramUserId, isTelegramAdmin, admin, loginAdmin, logoutAdmin,
       drivers, selectedDriverId, selectDriver, updateDriverStatus, deleteDriver,
       notifications, markNotificationRead, markAllNotificationsRead, unreadCount,
       sidebarOpen, setSidebarOpen,
