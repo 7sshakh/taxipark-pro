@@ -12,8 +12,6 @@ interface AppContextType {
   telegramUserId: number | null;
   isTelegramAdmin: boolean;
   admin: Admin | null;
-  loginAdmin: (password: string) => boolean;
-  logoutAdmin: () => void;
   drivers: Driver[];
   selectedDriverId: string | null;
   selectDriver: (id: string | null) => void;
@@ -94,22 +92,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const loginAdmin = useCallback((password: string) => {
-    if (password === 'admin123') {
-      setIsAdminAuthenticated(true);
-      setAdmin(mockAdmin);
-      setCurrentView('admin_dashboard');
-      return true;
-    }
-    return false;
-  }, []);
-
-  const logoutAdmin = useCallback(() => {
-    setIsAdminAuthenticated(false);
-    setAdmin(null);
-    setCurrentView('landing');
-  }, []);
-
   const selectDriver = useCallback((id: string | null) => {
     setSelectedDriverId(id);
   }, []);
@@ -140,7 +122,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <AppContext.Provider value={{
       currentView, setView,
-      isAdminAuthenticated, isTelegramApp, telegramUserId, isTelegramAdmin, admin, loginAdmin, logoutAdmin,
+      isAdminAuthenticated, isTelegramApp, telegramUserId, isTelegramAdmin, admin,
       drivers, selectedDriverId, selectDriver, updateDriverStatus, deleteDriver,
       notifications, markNotificationRead, markAllNotificationsRead, unreadCount,
       sidebarOpen, setSidebarOpen,

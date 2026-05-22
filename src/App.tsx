@@ -12,19 +12,25 @@ import {
   DriverLayout, DriverDashboard, DriverTransactions,
   DriverWithdraw, DriverProfile, DriverSettings
 } from '@/components/driver/DriverPages';
-import { LandingPage } from '@/components/LandingPage';
+
+function TWALoadingScreen() {
+  return (
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="text-center">
+        <div className="text-6xl mb-4">🚕</div>
+        <div className="text-white text-xl font-semibold">TaxiPark Pro</div>
+        <div className="text-slate-400 text-sm mt-2">Yuklanmoqda...</div>
+      </div>
+    </div>
+  );
+}
 
 function AppRouter() {
-  const { currentView, isAdminAuthenticated, driverMode } = useApp();
+  const { currentView, isAdminAuthenticated, driverMode, isTelegramApp } = useApp();
 
-  // Landing page
-  if (currentView === 'landing') {
-    return <LandingPage />;
-  }
-
-  // Admin Login
-  if (currentView === 'admin_login' && !isAdminAuthenticated) {
-    return <LandingPage />;
+  // Show loading screen if not in Telegram
+  if (!isTelegramApp) {
+    return <TWALoadingScreen />;
   }
 
   // Driver Mode
@@ -59,7 +65,7 @@ function AppRouter() {
     );
   }
 
-  return <LandingPage />;
+  return <TWALoadingScreen />;
 }
 
 export default function App() {
