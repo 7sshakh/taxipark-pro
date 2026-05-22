@@ -1,0 +1,10 @@
+{
+  "name": "TaxiPark Pro",
+  "short_name": "TaxiPark",
+  "description": "TaxiPark Pro Telegram Web App and admin platform.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "scope": "."
+}

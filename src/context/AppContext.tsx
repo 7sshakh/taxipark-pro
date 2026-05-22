@@ -1,0 +1,129 @@
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import type { AppView, Driver, Notification } from '@/types';
+import { mockAdmin, mockDrivers, mockNotifications, currentDriver } from '@/data/mockData';
+import type { Admin } from '@/types';
+
+interface AppContextType {
+  currentView: AppView;
+  setView: (view: AppView) => void;
+  isAdminAuthenticated: boolean;
+  admin: Admin | null;
+  loginAdmin: (password: string) => boolean;
+  logoutAdmin: () => void;
+  drivers: Driver[];
+  selectedDriverId: string | null;
+  selectDriver: (id: string | null) => void;
+  updateDriverStatus: (id: string, status: Driver['status']) => void;
+  deleteDriver: (id: string) => void;
+  notifications: Notification[];
+  markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: () => void;
+  unreadCount: number;
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+  driverMode: boolean;
+  setDriverMode: (mode: boolean) => void;
+  currentDriver: Driver;
+  appName: string;
+}
+
+const AppContext = createContext<AppContextType | null>(null);
+
+export function AppProvider({ children }: { children: ReactNode }) {
+  const [currentView, setCurrentView] = useState<AppView>('landing');
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [admin, setAdmin] = useState<Admin | null>(null);
+  const [drivers, setDrivers] = useState<Driver[]>(mockDrivers);
+  const [selectedDriverId, setSelectedDriverId] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [driverMode, setDriverMode] = useState(false);
+
+  const appName = 'TaxiPark Pro';
+
+  useEffect(() => {
+    async function loadBackendData() {
+      try {
+        const [driversRes, notificationsRes] = await Promise.all([
+          fetch('/api/drivers'),
+          fetch('/api/notifications'),
+        ]);
+
+        if (driversRes.ok) {
+          setDrivers(await driversRes.json());
+        }
+
+        if (notificationsRes.ok) {
+          setNotifications(await notificationsRes.json());
+        }
+      } catch (error) {
+        console.warn('Backend load error:', error);
+      }
+    }
+    loadBackendData();
+  }, []);
+
+  const loginAdmin = useCallback((password: string) => {
+    if (password === 'admin123') {
+      setIsAdminAuthenticated(true);
+      setAdmin(mockAdmin);
+      setCurrentView('admin_dashboard');
+      return true;
+    }
+    return false;
+  }, []);
+
+  const logoutAdmin = useCallback(() => {
+    setIsAdminAuthenticated(false);
+    setAdmin(null);
+    setCurrentView('landing');
+  }, []);
+
+  const selectDriver = useCallback((id: string | null) => {
+    setSelectedDriverId(id);
+  }, []);
+
+  const updateDriverStatus = useCallback((id: string, status: Driver['status']) => {
+    setDrivers(prev => prev.map(d => d.id === id ? { ...d, status } : d));
+  }, []);
+
+  const deleteDriver = useCallback((id: string) => {
+    setDrivers(prev => prev.filter(d => d.id !== id));
+  }, []);
+
+  const markNotificationRead = useCallback((id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  }, []);
+
+  const markAllNotificationsRead = useCallback(() => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  }, []);
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  const setView = useCallback((view: AppView) => {
+    setCurrentView(view);
+    setSidebarOpen(false);
+  }, []);
+
+  return (
+    <AppContext.Provider value={{
+      currentView, setView,
+      isAdminAuthenticated, admin, loginAdmin, logoutAdmin,
+      drivers, selectedDriverId, selectDriver, updateDriverStatus, deleteDriver,
+      notifications, markNotificationRead, markAllNotificationsRead, unreadCount,
+      sidebarOpen, setSidebarOpen,
+      driverMode, setDriverMode,
+      currentDriver: currentDriver as Driver,
+      appName,
+    }}>
+      {children}
+    </AppContext.Provider>
+  );
+}
+
+export function useApp(): AppContextType {
+  const ctx = useContext(AppContext);
+  if (!ctx) throw new Error('useApp must be used within AppProvider');
+  return ctx;
+}
